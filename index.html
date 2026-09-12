@@ -15,10 +15,10 @@
 <meta name="twitter:description" content="从相遇，到此刻。我们想与你分享这一场关于爱的故事。">
 <meta name="twitter:image" content="https://songming-ping.github.io/wedding/images/og.jpg">
 <link rel="preconnect" href="https://miaoda.feishu.cn" crossorigin>
-<link rel="preconnect" href="https://fastly.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://aka.doubaocdn.com" crossorigin>
 <link rel="preconnect" href="https://songming-ping.github.io" crossorigin>
-<link rel="preload" as="image" href="https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/cover.jpg">
-<link rel="preload" as="image" href="https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/intro.png">
+<link rel="preload" as="image" href="https://aka.doubaocdn.com/s/kvdxAATa2P">
+<link rel="preload" as="image" href="https://aka.doubaocdn.com/s/9ZsVXeU0EA">
 <link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Noto+Serif+SC:wght@200;300;400;500&family=Noto+Sans+SC:wght@200;300;400&display=swap">
 <style>
 /* 本地CDN字体：Great Vibes用完整字体（字形不变），马善政用子集字体（加载快） */
@@ -114,7 +114,7 @@ body {
 .rose-intro {
   position: fixed; inset: 0; z-index: 9999;
   display: flex; justify-content: center; align-items: flex-end; padding-bottom: 18%;
-  background-image: linear-gradient(160deg, #EAF2F7 0%, #F7EFE2 55%, #EFE3D8 100%);
+  background-image: url('https://aka.doubaocdn.com/s/9ZsVXeU0EA');
   background-size: cover; background-position: center top;
   transition: opacity 1s var(--ease-in-out), visibility 1s;
 }
@@ -165,7 +165,7 @@ body {
 /* ===== HERO ===== */
 .hero { justify-content: flex-end; align-items: center; text-align: center; padding-bottom: 70px; }
 .hero-bg-photo { position: absolute; inset: 0; z-index: 0;
-  background-image: linear-gradient(160deg, #DCE9F2 0%, #F5EBDD 100%);
+  background-image: url('https://aka.doubaocdn.com/s/kvdxAATa2P');
   background-size: cover; background-position: 48.5% 30%; filter: brightness(0.82) saturate(0.92); }
 .hero-bg-overlay { position: absolute; inset: 0; z-index: 1;
   background: linear-gradient(180deg, rgba(217,229,238,0.12) 0%, rgba(225,227,230,0.28) 42%, rgba(232,220,200,0.74) 78%, rgba(231,219,201,0.97) 100%); }
@@ -612,7 +612,7 @@ button.foot-hint:hover { color: var(--accent-terra); }
   </svg>
 </div>
 <audio id="bgMusic" loop preload="none">
-  <source src="https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/music.mp3" type="audio/mpeg">
+  <source src="https://aka.doubaocdn.com/s/JJD9saRTZw" type="audio/mpeg">
 </audio>
 
 <!-- ===== Navigation ===== -->
@@ -745,7 +745,7 @@ button.foot-hint:hover { color: var(--accent-terra); }
   <!-- DETAILS -->
   <section class="snap-section details-screen" id="details">
     <div class="detail-invite-wrap">
-      <img src="https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/details.png" alt="刘松铭 & 蒋萍 婚礼邀请函" class="detail-invite-img">
+      <img src="https://aka.doubaocdn.com/s/xFMAUrJSEf" alt="刘松铭 & 蒋萍 婚礼邀请函" class="detail-invite-img">
       <div class="detail-map-wrap">
         <a class="map-btn detail-map-btn" id="mapBtn" href="https://uri.amap.com/search?keyword=%E5%B9%BF%E5%AE%89%E5%B8%82%E5%B2%B3%E6%B1%A0%E5%8E%BF%E6%82%A6%E7%AC%99%E5%9B%BD%E9%99%85%E5%AE%B4%E4%BC%9A%E4%B8%AD%E5%BF%83&callnative=1" target="_blank" rel="noopener noreferrer"
            onclick="var u=this.href;var w=window.open(u,'_blank','noopener');if(!w){window.location.href=u;}return false;">
@@ -779,65 +779,117 @@ button.foot-hint:hover { color: var(--accent-terra); }
 
 <script>
 
-// ===== CDN双源加速：jsDelivr快源 + GitHub永久回退（图片永不过期）=====
-var IMG_CHAIN = [
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/',
-  'https://cdn.jsdelivr.net/gh/songming-ping/wedding@main/images/',
-  'https://songming-ping.github.io/wedding/images/'
-];
+// ===== CDN主源 + GitHub永久回退（豆包CDN最快，GitHub保底永不白屏）=====
+var CDN_MAP = {
+  'https://aka.doubaocdn.com/s/VMwaw0eE66': 'lawn-01.jpg',
+  'https://aka.doubaocdn.com/s/8pASbhFIQk': 'lawn-02.jpg',
+  'https://aka.doubaocdn.com/s/YeEQKeUxrF': 'lawn-03.jpg',
+  'https://aka.doubaocdn.com/s/Q2FNCfqeZL': 'eu-01.jpg',
+  'https://aka.doubaocdn.com/s/2aIoqzyUNt': 'eu-02.jpg',
+  'https://aka.doubaocdn.com/s/XU1FTo4wfg': 'eu-03.jpg',
+  'https://aka.doubaocdn.com/s/IDDgbin0Y2': 'eu-04.jpg',
+  'https://aka.doubaocdn.com/s/isLIl9RgUA': 'eu-05.jpg',
+  'https://aka.doubaocdn.com/s/m0tCw0xJZJ': 'eu-06.jpg',
+  'https://aka.doubaocdn.com/s/5jCGdkcF7j': 'eu-07.jpg',
+  'https://aka.doubaocdn.com/s/K8qYNhubUQ': 'eu-08.jpg',
+  'https://aka.doubaocdn.com/s/wPriHGn5DP': 'eu-09.jpg',
+  'https://aka.doubaocdn.com/s/NFVV2r5uPG': 'eu-10.jpg',
+  'https://aka.doubaocdn.com/s/VdRxcpPVZg': 'eu-11.jpg',
+  'https://aka.doubaocdn.com/s/MgNvJ4Tzjs': 'eu-12.jpg',
+  'https://aka.doubaocdn.com/s/oWYRS5UL9x': 'gh-01.jpg',
+  'https://aka.doubaocdn.com/s/7zDENyYUMQ': 'gh-02.jpg',
+  'https://aka.doubaocdn.com/s/F5V5Ngc3Jx': 'gh-03.jpg',
+  'https://aka.doubaocdn.com/s/zjnmN7zFLA': 'gh-04.jpg',
+  'https://aka.doubaocdn.com/s/hwFcNmJkTr': 'gh-05.jpg',
+  'https://aka.doubaocdn.com/s/b7IdyRTE16': 'gh-06.jpg',
+  'https://aka.doubaocdn.com/s/S3uRLKk8Jr': 'gh-07.jpg',
+  'https://aka.doubaocdn.com/s/qrm4PVyg6d': 'gh-08.jpg',
+  'https://aka.doubaocdn.com/s/3OUMMcDhpU': 'gh-09.jpg',
+  'https://aka.doubaocdn.com/s/yHicOA4dPM': 'life-01.jpg',
+  'https://aka.doubaocdn.com/s/n9wIC7SdEg': 'life-02.jpg',
+  'https://aka.doubaocdn.com/s/2vdxKy3HIN': 'life-03.jpg',
+  'https://aka.doubaocdn.com/s/PJVaBtU0mg': 'life-04.jpg',
+  'https://aka.doubaocdn.com/s/W4UFZU6K1T': 'life-05.jpg',
+  'https://aka.doubaocdn.com/s/8c4VIv6IbM': 'life-06.jpg',
+  'https://aka.doubaocdn.com/s/j7V6gthFVC': 'life-07.jpg',
+  'https://aka.doubaocdn.com/s/UWEL7ymSe0': 'life-08.jpg',
+  'https://aka.doubaocdn.com/s/xds52TlHiA': 'life-09.jpg',
+  'https://aka.doubaocdn.com/s/5Y3rTcJCOZ': 'life-10.jpg',
+  'https://aka.doubaocdn.com/s/tmzI2ENW2J': 'life-11.jpg',
+  'https://aka.doubaocdn.com/s/8rWeRlUIP8': 'life-12.jpg',
+  'https://aka.doubaocdn.com/s/4YWJIROLN9': 'life-13.jpg',
+  'https://aka.doubaocdn.com/s/wiKrtXSxmV': 'life-14.jpg',
+  'https://aka.doubaocdn.com/s/EAhFDBiZrq': 'life-15.jpg',
+  'https://aka.doubaocdn.com/s/Z8qFRQ0VRX': 'life-16.jpg',
+  'https://aka.doubaocdn.com/s/dYGINxknn5': 'life-17.jpg',
+  'https://aka.doubaocdn.com/s/OLtPqN8CV1': 'life-18.jpg',
+  'https://aka.doubaocdn.com/s/NXZ6EHAqrI': 'life-19.jpg',
+  'https://aka.doubaocdn.com/s/tycMYDsIIa': 'life-20.jpg',
+  'https://aka.doubaocdn.com/s/0YYA2c4C4h': 'life-21.jpg',
+  'https://aka.doubaocdn.com/s/UNQ5eUw9xV': 'life-22.jpg',
+  'https://aka.doubaocdn.com/s/E2KNE6i8Ys': 'life-23.jpg',
+  'https://aka.doubaocdn.com/s/J88pW7Akn9': 'life-24.jpg',
+  'https://aka.doubaocdn.com/s/B0bSacLI83': 'life-25.jpg',
+  'https://aka.doubaocdn.com/s/cqTwbhWDEU': 'life-26.jpg',
+  'https://aka.doubaocdn.com/s/IqT2nlNWXP': 'life-27.jpg',
+  'https://aka.doubaocdn.com/s/brPsDmWhiL': 'life-28.jpg',
+  'https://aka.doubaocdn.com/s/sR0rBKpfMS': 'life-29.jpg',
+  'https://aka.doubaocdn.com/s/s7wUKRCD1Q': 'life-30.jpg',
+  'https://aka.doubaocdn.com/s/uL0e63x82M': 'life-31.jpg',
+  'https://aka.doubaocdn.com/s/PE8QUIYbON': 'life-32.jpg',
+  'https://aka.doubaocdn.com/s/ZvgrtSNKUC': 'life-33.jpg',
+  'https://aka.doubaocdn.com/s/wSz8RfSlWB': 'life-34.jpg',
+  'https://aka.doubaocdn.com/s/9mRPVXEkVX': 'life-35.jpg',
+  'https://aka.doubaocdn.com/s/yKgotvZVVf': 'life-36.jpg',
+  'https://aka.doubaocdn.com/s/R8cdCvp0Xn': 'life-37.jpg',
+  'https://aka.doubaocdn.com/s/kvdxAATa2P': 'cover.jpg',
+  'https://aka.doubaocdn.com/s/9ZsVXeU0EA': 'intro.png',
+  'https://aka.doubaocdn.com/s/xFMAUrJSEf': 'details.png',
+  'https://aka.doubaocdn.com/s/JJD9saRTZw': 'music.mp3'
+};
+var GH_BASE = 'https://songming-ping.github.io/wedding/images/';
+// 图片加载失败 -> 自动回退GitHub同名文件
 document.addEventListener('error', function (e) {
   var t = e.target;
-  if (t && t.tagName === 'IMG' && t.src) {
-    for (var i = 0; i < IMG_CHAIN.length; i++) {
-      if (t.src.indexOf(IMG_CHAIN[i]) === 0 && i < IMG_CHAIN.length - 1) {
-        e.preventDefault();
-        t.src = IMG_CHAIN[i + 1] + t.src.slice(IMG_CHAIN[i].length);
-        break;
-      }
+  if (t && t.tagName === 'IMG' && t.src && !t._fb) {
+    var file = CDN_MAP[t.src] || CDN_MAP[t.src.split('?')[0]];
+    if (file) {
+      t._fb = true;
+      e.preventDefault();
+      t.src = GH_BASE + file;
     }
   }
 }, true);
-function setBgBest(el, file) {
+// 背景图（封面/开场彩绘）：CDN失败自动切GitHub
+function bgWithFallback(el, cdnUrl, file) {
   if (!el) return;
   var done = false;
-  for (var i = 0; i < IMG_CHAIN.length; i++) {
-    (function (url) {
-      var p = new Image();
-      p.onload = function () {
-        if (!done) { done = true; el.style.backgroundImage = "url('" + url + "')"; }
-      };
-      p.src = url;
-    })(IMG_CHAIN[i] + file);
-  }
-  setTimeout(function () {
-    if (!done) {
-      done = true;
-      el.style.backgroundImage = "url('" + IMG_CHAIN[IMG_CHAIN.length - 1] + file + "')";
-    }
-  }, 6000);
+  var p = new Image();
+  p.onload = function () { if (!done) { done = true; el.style.backgroundImage = "url('" + cdnUrl + "')"; } };
+  p.onerror = function () { if (!done) { done = true; el.style.backgroundImage = "url('" + GH_BASE + file + "')"; } };
+  p.src = cdnUrl;
+  setTimeout(function () { if (!done) { done = true; el.style.backgroundImage = "url('" + GH_BASE + file + "')"; } }, 4000);
 }
+// 音乐：CDN失败切GitHub
 var bgMusicEl = document.getElementById('bgMusic');
-var musicIdx = 0;
 if (bgMusicEl) {
   bgMusicEl.addEventListener('error', function () {
-    musicIdx++;
-    if (musicIdx < IMG_CHAIN.length) {
-      bgMusicEl.src = IMG_CHAIN[musicIdx] + 'music.mp3';
+    if (!bgMusicEl._fb) {
+      bgMusicEl._fb = true;
+      bgMusicEl.src = GH_BASE + 'music.mp3';
       bgMusicEl.load();
     }
   });
 }
 (function () {
-  function trySetBg() {
-    var intro = document.getElementById('roseIntro');
-    var hero = document.querySelector('.hero-bg-photo');
-    if (intro) setBgBest(intro, 'intro.png');
-    if (hero) setBgBest(hero, 'cover.jpg');
+  function tryBg() {
+    bgWithFallback(document.getElementById('roseIntro'), 'https://aka.doubaocdn.com/s/9ZsVXeU0EA', 'intro.png');
+    bgWithFallback(document.querySelector('.hero-bg-photo'), 'https://aka.doubaocdn.com/s/kvdxAATa2P', 'cover.jpg');
   }
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', trySetBg);
+    document.addEventListener('DOMContentLoaded', tryBg);
   } else {
-    trySetBg();
+    tryBg();
   }
 })();
 
@@ -913,67 +965,67 @@ document.getElementById('menuBtn').addEventListener('click', () => navLinks.clas
 
 // ===== Photo data =====
 const allPhotos = [
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/lawn-01.jpg', // 00 草坪
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/lawn-02.jpg', // 01 草坪
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/lawn-03.jpg', // 02 草坪
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/eu-01.jpg', // 03 欧式
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/eu-02.jpg', // 04 欧式
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/eu-03.jpg', // 05 欧式
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/eu-04.jpg', // 06 欧式
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/eu-05.jpg', // 07 欧式
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/eu-06.jpg', // 08 欧式
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/eu-07.jpg', // 09 欧式
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/eu-08.jpg', // 10 欧式
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/eu-09.jpg', // 11 欧式
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/eu-10.jpg', // 12 欧式
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/eu-11.jpg', // 13 欧式
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/eu-12.jpg', // 14 欧式
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/gh-01.jpg', // 15 花房
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/gh-02.jpg', // 16 花房
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/gh-03.jpg', // 17 花房
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/gh-04.jpg', // 18 花房
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/gh-05.jpg', // 19 花房
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/gh-06.jpg', // 20 花房
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/gh-07.jpg', // 21 花房
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/gh-08.jpg', // 22 花房
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/gh-09.jpg', // 23 花房
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-01.jpg', // 24 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-02.jpg', // 25 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-03.jpg', // 26 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-04.jpg', // 27 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-05.jpg', // 28 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-06.jpg', // 29 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-07.jpg', // 30 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-08.jpg', // 31 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-09.jpg', // 32 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-10.jpg', // 33 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-11.jpg', // 34 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-12.jpg', // 35 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-13.jpg', // 36 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-14.jpg', // 37 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-15.jpg', // 38 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-16.jpg', // 39 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-17.jpg', // 40 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-18.jpg', // 41 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-19.jpg', // 42 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-20.jpg', // 43 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-21.jpg', // 44 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-22.jpg', // 45 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-23.jpg', // 46 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-24.jpg', // 47 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-25.jpg', // 48 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-26.jpg', // 49 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-27.jpg', // 50 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-28.jpg', // 51 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-29.jpg', // 52 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-30.jpg', // 53 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-31.jpg', // 54 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-32.jpg', // 55 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-33.jpg', // 56 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-34.jpg', // 57 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-35.jpg', // 58 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-36.jpg', // 59 生活照
-  'https://fastly.jsdelivr.net/gh/songming-ping/wedding@main/images/life-37.jpg', // 60 生活照
+  'https://aka.doubaocdn.com/s/VMwaw0eE66', // 00 草坪
+  'https://aka.doubaocdn.com/s/8pASbhFIQk', // 01 草坪
+  'https://aka.doubaocdn.com/s/YeEQKeUxrF', // 02 草坪
+  'https://aka.doubaocdn.com/s/Q2FNCfqeZL', // 03 欧式
+  'https://aka.doubaocdn.com/s/2aIoqzyUNt', // 04 欧式
+  'https://aka.doubaocdn.com/s/XU1FTo4wfg', // 05 欧式
+  'https://aka.doubaocdn.com/s/IDDgbin0Y2', // 06 欧式
+  'https://aka.doubaocdn.com/s/isLIl9RgUA', // 07 欧式
+  'https://aka.doubaocdn.com/s/m0tCw0xJZJ', // 08 欧式
+  'https://aka.doubaocdn.com/s/5jCGdkcF7j', // 09 欧式
+  'https://aka.doubaocdn.com/s/K8qYNhubUQ', // 10 欧式
+  'https://aka.doubaocdn.com/s/wPriHGn5DP', // 11 欧式
+  'https://aka.doubaocdn.com/s/NFVV2r5uPG', // 12 欧式
+  'https://aka.doubaocdn.com/s/VdRxcpPVZg', // 13 欧式
+  'https://aka.doubaocdn.com/s/MgNvJ4Tzjs', // 14 欧式
+  'https://aka.doubaocdn.com/s/oWYRS5UL9x', // 15 花房
+  'https://aka.doubaocdn.com/s/7zDENyYUMQ', // 16 花房
+  'https://aka.doubaocdn.com/s/F5V5Ngc3Jx', // 17 花房
+  'https://aka.doubaocdn.com/s/zjnmN7zFLA', // 18 花房
+  'https://aka.doubaocdn.com/s/hwFcNmJkTr', // 19 花房
+  'https://aka.doubaocdn.com/s/b7IdyRTE16', // 20 花房
+  'https://aka.doubaocdn.com/s/S3uRLKk8Jr', // 21 花房
+  'https://aka.doubaocdn.com/s/qrm4PVyg6d', // 22 花房
+  'https://aka.doubaocdn.com/s/3OUMMcDhpU', // 23 花房
+  'https://aka.doubaocdn.com/s/yHicOA4dPM', // 24 生活照
+  'https://aka.doubaocdn.com/s/n9wIC7SdEg', // 25 生活照
+  'https://aka.doubaocdn.com/s/2vdxKy3HIN', // 26 生活照
+  'https://aka.doubaocdn.com/s/PJVaBtU0mg', // 27 生活照
+  'https://aka.doubaocdn.com/s/W4UFZU6K1T', // 28 生活照
+  'https://aka.doubaocdn.com/s/8c4VIv6IbM', // 29 生活照
+  'https://aka.doubaocdn.com/s/j7V6gthFVC', // 30 生活照
+  'https://aka.doubaocdn.com/s/UWEL7ymSe0', // 31 生活照
+  'https://aka.doubaocdn.com/s/xds52TlHiA', // 32 生活照
+  'https://aka.doubaocdn.com/s/5Y3rTcJCOZ', // 33 生活照
+  'https://aka.doubaocdn.com/s/tmzI2ENW2J', // 34 生活照
+  'https://aka.doubaocdn.com/s/8rWeRlUIP8', // 35 生活照
+  'https://aka.doubaocdn.com/s/4YWJIROLN9', // 36 生活照
+  'https://aka.doubaocdn.com/s/wiKrtXSxmV', // 37 生活照
+  'https://aka.doubaocdn.com/s/EAhFDBiZrq', // 38 生活照
+  'https://aka.doubaocdn.com/s/Z8qFRQ0VRX', // 39 生活照
+  'https://aka.doubaocdn.com/s/dYGINxknn5', // 40 生活照
+  'https://aka.doubaocdn.com/s/OLtPqN8CV1', // 41 生活照
+  'https://aka.doubaocdn.com/s/NXZ6EHAqrI', // 42 生活照
+  'https://aka.doubaocdn.com/s/tycMYDsIIa', // 43 生活照
+  'https://aka.doubaocdn.com/s/0YYA2c4C4h', // 44 生活照
+  'https://aka.doubaocdn.com/s/UNQ5eUw9xV', // 45 生活照
+  'https://aka.doubaocdn.com/s/E2KNE6i8Ys', // 46 生活照
+  'https://aka.doubaocdn.com/s/J88pW7Akn9', // 47 生活照
+  'https://aka.doubaocdn.com/s/B0bSacLI83', // 48 生活照
+  'https://aka.doubaocdn.com/s/cqTwbhWDEU', // 49 生活照
+  'https://aka.doubaocdn.com/s/IqT2nlNWXP', // 50 生活照
+  'https://aka.doubaocdn.com/s/brPsDmWhiL', // 51 生活照
+  'https://aka.doubaocdn.com/s/sR0rBKpfMS', // 52 生活照
+  'https://aka.doubaocdn.com/s/s7wUKRCD1Q', // 53 生活照
+  'https://aka.doubaocdn.com/s/uL0e63x82M', // 54 生活照
+  'https://aka.doubaocdn.com/s/PE8QUIYbON', // 55 生活照
+  'https://aka.doubaocdn.com/s/ZvgrtSNKUC', // 56 生活照
+  'https://aka.doubaocdn.com/s/wSz8RfSlWB', // 57 生活照
+  'https://aka.doubaocdn.com/s/9mRPVXEkVX', // 58 生活照
+  'https://aka.doubaocdn.com/s/yKgotvZVVf', // 59 生活照
+  'https://aka.doubaocdn.com/s/R8cdCvp0Xn', // 60 生活照
 ];
 
 // ===== Memories: two crossing auto rows (random order each load) =====
