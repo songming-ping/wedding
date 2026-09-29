@@ -88,7 +88,7 @@
     border-radius: 10px; width: auto; padding: 0 14px; display: inline-block;
   }
 
-  /* 同步提示条 */
+  /* 同步状态条 */
   .sync-bar {
     border-radius: 12px; padding: 10px 14px; margin-bottom: 12px;
     font-size: 13px; line-height: 1.6; display: flex; align-items: center; gap: 8px;
@@ -96,10 +96,13 @@
   .sync-bar.ok { background: #eef5e8; color: #5d7d42; }
   .sync-bar.warn { background: #fdf3e3; color: #a3712d; }
   .sync-bar.err { background: #fbeaea; color: #b04a4a; }
+  .sync-bar.info { background: #eef2f7; color: #5a6b82; }
   .sync-bar .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .sync-bar.ok .dot { background: #7ba05b; }
   .sync-bar.warn .dot { background: #d9a441; }
   .sync-bar.err .dot { background: #c05a5a; }
+  .sync-bar.info .dot { background: #7a8ca6; }
+  .sync-bar .flex { flex: 1; }
   .sync-bar button {
     border: none; background: var(--gold); color: #fff; font-size: 12px;
     border-radius: 14px; padding: 5px 12px; cursor: pointer; flex-shrink: 0; font-weight: 600;
@@ -158,6 +161,10 @@
   .modal textarea {
     width: 100%; height: 130px; border: 1px solid #e8ddd2; border-radius: 10px;
     padding: 10px; font-size: 13px; resize: vertical; background: #fdfbf8;
+  }
+  .modal input[type="password"] {
+    width: 100%; height: 44px; border: 1px solid #e8ddd2; border-radius: 10px;
+    padding: 0 12px; font-size: 15px; background: #fdfbf8; outline: none; margin-bottom: 10px;
   }
   .modal .btn-row { display: flex; gap: 10px; margin-top: 12px; }
   .modal .btn-row .btn { flex: 1; height: 42px; font-size: 15px; }
@@ -243,22 +250,39 @@
   </div>
 
   <div class="tools">
-    <button class="btn-ghost" onclick="openSync()">🔄 同步到云端</button>
+    <button class="btn-ghost" onclick="openSync()">🔄 手动同步</button>
     <button class="btn-ghost" onclick="openExport()">📤 导出备份</button>
     <button class="btn-ghost" onclick="openImport()">📥 导入合并</button>
   </div>
 
   <div class="sync-status" style="margin-top:20px;font-size:11px;color:#c9beb2;text-align:center;line-height:1.7;">
-    页面每 20 秒自动刷新云端最新记录，家人记录后全端可见。<br>
-    自己记录后点「同步到云端」→ 复制内容发给豆包，我来合并进云端。
+    开启自动同步后：记录即上云，全家人实时可见，无需任何手动操作。<br>
+    未开启时：记录存本机，可点「手动同步」备份。
   </div>
 </div>
 
-<!-- 同步弹窗 -->
+<!-- 自动同步设置弹窗 -->
+<div class="modal-mask" id="modalToken">
+  <div class="modal">
+    <h3>⚙️ 开启自动同步</h3>
+    <p class="tip">粘贴你的 GitHub 访问令牌（token），保存后：<br>
+    1. 每次记录 / 修改 / 删除都会<b>自动写入云端</b>，家人实时可见<br>
+    2. token 只保存在<b>本机</b>，不会上传或公开<br>
+    3. 没开自动同步的家人打开也能<b>实时看到</b>最新记录</p>
+    <p class="tip" style="color:#c05a5a;">⚠️ token 从哪拿：GitHub → 头像 → Settings → Developer settings → Personal access tokens → 复制你的 token</p>
+    <input type="password" id="inpToken" placeholder="粘贴 ghp_ 开头的 token" autocomplete="off">
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveToken()">保存并开启</button>
+      <button class="btn btn-cancel" onclick="closeModal('modalToken')">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 手动同步弹窗 -->
 <div class="modal-mask" id="modalSync">
   <div class="modal">
-    <h3>🔄 同步到云端</h3>
-    <p class="tip">复制下面内容，粘贴到微信发给豆包（就说"合并礼金簿"），我收到后会立即合并进云端，全家人刷新即可看到。</p>
+    <h3>🔄 手动同步</h3>
+    <p class="tip">复制下面内容，粘贴发给豆包（说"合并礼金簿"），我会合并进云端。已开启自动同步则无需此操作。</p>
     <textarea id="syncText" readonly></textarea>
     <div class="btn-row">
       <button class="btn btn-primary" onclick="copySync()">复制内容</button>
@@ -300,50 +324,63 @@
 (function () {
   'use strict';
 
-  // ===== 数据模型 =====
-  // record: { id, name, amount, side: 'm'|'w', note, ts }
+  // ===== 常量 =====
   var DB_KEY = 'giftbook_v2';
-  var CLOUD_FILE = 'data.json';  // 云端数据文件（同目录，GitHub Pages 托管）
-  var records = [];       // 本地全部记录（含已同步+待同步）
-  var cloudIds = {};      // 云端已有的记录 id 集合
+  var TOKEN_KEY = 'giftbook_token_v1';
+  var DEL_KEY = 'giftbook_deleted_v1';
+  var REPO = 'songming-ping/wedding';
+  var DATA_PATH = 'giftbook/data.json';
+  var CLOUD_FILE = 'data.json';
+
+  // ===== 状态 =====
+  var records = [];
+  var cloudIds = {};
+  var deletedIds = {};   // 已同步后又被本地删除的记录 id（推送时从云端剔除）
   var currentFilter = 'all';
   var editingId = null;
   var cloudOk = false;
   var fetching = false;
+  var pushing = false;
 
   // ===== 本地存储 =====
   function saveLocal() {
-    try { localStorage.setItem(DB_KEY, JSON.stringify(records)); } catch (e) {}
+    try {
+      localStorage.setItem(DB_KEY, JSON.stringify(records));
+      localStorage.setItem(DEL_KEY, JSON.stringify(deletedIds));
+    } catch (e) {}
   }
   function loadLocal() {
     try {
       var s = localStorage.getItem(DB_KEY);
       if (s) records = JSON.parse(s);
-    } catch (e) { records = []; }
+      var d = localStorage.getItem(DEL_KEY);
+      if (d) deletedIds = JSON.parse(d);
+    } catch (e) {}
     if (!Array.isArray(records)) records = [];
+    if (!deletedIds || typeof deletedIds !== 'object') deletedIds = {};
   }
 
-  // ===== 云端数据（GitHub Pages 托管的 data.json）=====
-  function cloudUrl() {
-    return CLOUD_FILE;
+  // ===== token =====
+  function getToken() {
+    try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; }
+  }
+  function setToken(t) {
+    try { localStorage.setItem(TOKEN_KEY, t); } catch (e) {}
   }
 
-  // 拉取云端最新数据并合并
+  // ===== 云端读取（GitHub Pages 静态文件，每20秒轮询）=====
   function fetchCloud() {
     if (fetching) return;
     fetching = true;
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', cloudUrl() + '?t=' + Date.now(), true);
+    xhr.open('GET', CLOUD_FILE + '?t=' + Date.now(), true);
     xhr.timeout = 20000;
     xhr.onload = function () {
       fetching = false;
       if (xhr.status === 200) {
         try {
           var cloud = JSON.parse(xhr.responseText);
-          if (Array.isArray(cloud)) {
-            mergeCloud(cloud);
-            return;
-          }
+          if (Array.isArray(cloud)) { mergeCloud(cloud); return; }
         } catch (e) {}
       }
       setSyncBar('err', '云端连接失败，显示本机数据（会自动重试）');
@@ -353,22 +390,16 @@
     xhr.send();
   }
 
-  // 合并云端数据到本地（云端优先，按 id 去重；云端没有但本地有的标记为待同步）
   function mergeCloud(cloud) {
     cloudOk = true;
     var newCloudIds = {};
-    cloud.forEach(function (r) {
-      if (r && r.id) newCloudIds[r.id] = 1;
-    });
+    cloud.forEach(function (r) { if (r && r.id) newCloudIds[r.id] = 1; });
 
     var localById = {};
     records.forEach(function (r) { localById[r.id] = r; });
 
-    // 云端有、本地没有 → 加入；云端有、本地有 → 用云端版本
-    cloud.forEach(function (r) {
-      if (r && r.id) localById[r.id] = r;
-    });
-    // 本地有、云端没有 → 保留（待同步）
+    cloud.forEach(function (r) { if (r && r.id) localById[r.id] = r; });
+
     records = Object.keys(localById).map(function (k) { return localById[k]; });
     records.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
 
@@ -378,14 +409,103 @@
     updateSyncBar();
   }
 
-  // 待同步记录（本地有、云端没有）
   function pendingRecords() {
     return records.filter(function (r) { return r && !cloudIds[r.id]; });
   }
 
+  // ===== 自动同步（GitHub API 直接写入）=====
+  function githubFetch(method, path, body) {
+    return fetch('https://api.github.com/repos/' + REPO + '/contents/' + path, {
+      method: method,
+      headers: {
+        'Authorization': 'token ' + getToken(),
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json'
+      },
+      body: body ? JSON.stringify(body) : undefined
+    }).then(function (res) { return res.json(); });
+  }
+
+  // 合并本地+云端 → 推送到 GitHub
+  function pushCloud(attempt) {
+    if (pushing) return Promise.resolve();
+    if (!getToken()) { updateSyncBar(); return Promise.resolve(); }
+    pushing = true;
+    return githubFetch('GET', DATA_PATH).then(function (d) {
+      var cloudData = [];
+      if (d && d.content) {
+        try { cloudData = JSON.parse(decodeURIComponent(escape(atob(d.content)))); } catch (e) { cloudData = []; }
+      }
+      if (!Array.isArray(cloudData)) cloudData = [];
+
+      // 合并：云端剔除已删 + 本地覆盖/补入
+      var merged = [];
+      var seen = {};
+      cloudData.forEach(function (r) {
+        if (r && r.id && !deletedIds[r.id]) { merged.push(r); seen[r.id] = 1; }
+      });
+      records.forEach(function (r) {
+        if (!r || !r.id || deletedIds[r.id]) return;
+        if (seen[r.id]) {
+          for (var i = 0; i < merged.length; i++) {
+            if (merged[i].id === r.id) { merged[i] = r; break; }
+          }
+        } else {
+          merged.push(r); seen[r.id] = 1;
+        }
+      });
+      // 与当前云端完全一致则跳过
+      var currentStr = JSON.stringify(cloudData);
+      var newStr = JSON.stringify(merged);
+      if (currentStr === newStr) {
+        // 云端一致，直接标记已同步
+        cloudIds = {};
+        merged.forEach(function (r) { cloudIds[r.id] = 1; });
+        saveLocal(); renderAll(); updateSyncBar();
+        pushing = false;
+        return;
+      }
+      var content = btoa(unescape(encodeURIComponent(newStr)));
+      return githubFetch('PUT', DATA_PATH, {
+        message: 'giftbook auto-sync ' + new Date().toISOString(),
+        content: content,
+        sha: d.sha,
+        branch: 'main'
+      }).then(function (res) {
+        pushing = false;
+        if (res && res.content) {
+          cloudIds = {};
+          merged.forEach(function (r) { cloudIds[r.id] = 1; });
+          records = merged;
+          saveLocal(); renderAll();
+          setSyncBar('ok', '✓ 已自动同步到云端，全家人实时可见');
+          setTimeout(function () { updateSyncBar(); }, 4000);
+        } else {
+          // 409 冲突或失败 → 重试一次
+          if (!attempt && res && res.message && String(res.message).indexOf('409') >= 0) {
+            return pushCloud(1);
+          }
+          setSyncBar('err', '自动同步失败，稍后自动重试');
+          updateSyncBar();
+        }
+      });
+    }).catch(function () {
+      pushing = false;
+      setSyncBar('err', '自动同步失败，稍后自动重试');
+      updateSyncBar();
+    });
+  }
+
   function updateSyncBar() {
-    var pending = pendingRecords();
     var bar = document.getElementById('syncBar');
+    var pending = pendingRecords();
+    if (!getToken()) {
+      bar.style.display = 'flex';
+      bar.className = 'sync-bar info';
+      bar.innerHTML = '<span class="dot"></span><span class="flex">当前为只读查看模式，家人记录实时可见</span>' +
+        '<button onclick="openToken()">开启自动同步</button>';
+      return;
+    }
     if (!cloudOk) {
       bar.style.display = 'flex';
       bar.className = 'sync-bar err';
@@ -393,13 +513,15 @@
       return;
     }
     if (pending.length === 0) {
-      bar.style.display = 'none';
+      bar.style.display = 'flex';
+      bar.className = 'sync-bar ok';
+      bar.innerHTML = '<span class="dot"></span><span class="flex">自动同步已开启，记录即上云</span>';
       return;
     }
     bar.style.display = 'flex';
     bar.className = 'sync-bar warn';
-    bar.innerHTML = '<span class="dot"></span><span>有 <b>' + pending.length + '</b> 条新记录还没同步到云端</span>' +
-      '<button onclick="openSync()">去同步</button>';
+    bar.innerHTML = '<span class="dot"></span><span class="flex">有 <b>' + pending.length + '</b> 条待同步（自动重试中）</span>' +
+      '<button onclick="pushCloud(0)">立即同步</button>';
   }
 
   function setSyncBar(cls, msg) {
@@ -504,17 +626,16 @@
           records[i].side = side;
           records[i].note = note;
           records[i].ts = Date.now();
-          // 修改后标记为待同步（云端旧版本会被覆盖）
           delete cloudIds[editingId];
           break;
         }
       }
       editingId = null;
       document.getElementById('btnAdd').textContent = '✓ 记 录';
-      toast('已修改，记得同步到云端');
+      toast('✓ 已修改');
     } else {
       records.push({ id: uid(), name: name, amount: Number(amount), side: side, note: note, ts: Date.now() });
-      toast('✓ 已记录 ' + name + ' 的礼金，记得同步到云端');
+      toast('✓ 已记录 ' + name);
     }
 
     document.getElementById('inpName').value = '';
@@ -523,6 +644,8 @@
     saveLocal();
     renderAll();
     updateSyncBar();
+    // 自动同步
+    if (getToken()) pushCloud(0);
   };
 
   window.editRecord = function (id) {
@@ -544,12 +667,14 @@
 
   window.delRecord = function (id) {
     if (!confirm('确定删除这条记录吗？')) return;
+    if (cloudIds[id]) deletedIds[id] = 1;  // 已同步过的 → 云端也要删
     records = records.filter(function (r) { return r.id !== id; });
     delete cloudIds[id];
     saveLocal();
     renderAll();
     updateSyncBar();
-    toast('已删除');
+    if (getToken()) pushCloud(0);
+    toast('已删除' + (getToken() ? '，正在同步云端' : ''));
   };
 
   window.setFilter = function (f) {
@@ -561,13 +686,45 @@
     renderList();
   };
 
-  // ===== 同步到云端 =====
-  window.openSync = function () {
-    var pending = pendingRecords();
-    if (!pending.length) {
-      toast('所有记录都已同步到云端');
+  // ===== token 设置 =====
+  window.openToken = function () {
+    if (getToken()) {
+      if (!confirm('已开启自动同步。要更换或关闭自动同步吗？\n确定则清空 token（改为手动同步）。')) return;
+      setToken('');
+      toast('已关闭自动同步，数据保留在本机');
+      updateSyncBar();
       return;
     }
+    document.getElementById('inpToken').value = '';
+    showModal('modalToken');
+  };
+
+  window.saveToken = function () {
+    var t = document.getElementById('inpToken').value.trim();
+    if (!t) { toast('请粘贴 token'); return; }
+    // 验证 token（GET 用户信息）
+    fetch('https://api.github.com/user', { headers: { 'Authorization': 'token ' + t, 'Accept': 'application/vnd.github+json' } })
+      .then(function (res) {
+        if (res.status === 200) {
+          setToken(t);
+          closeModal('modalToken');
+          toast('✓ 自动同步已开启！记录即上云');
+          updateSyncBar();
+          pushCloud(0);
+        } else if (res.status === 401) {
+          toast('token 无效，请检查后重新粘贴');
+        } else {
+          toast('验证失败（' + res.status + '），请重试');
+        }
+      })
+      .catch(function () { toast('网络错误，请重试'); });
+  };
+
+  // ===== 手动同步 =====
+  window.openSync = function () {
+    if (getToken()) { pushCloud(0); return; }
+    var pending = pendingRecords();
+    if (!pending.length) { toast('没有需要同步的记录'); return; }
     var lines = [];
     lines.push('【婚礼礼金簿·同步】');
     lines.push('请把以下新记录合并进云端礼金簿：');
@@ -584,7 +741,7 @@
   window.copySync = function () {
     var ta = document.getElementById('syncText');
     ta.select();
-    try { document.execCommand('copy'); toast('✓ 已复制，去微信发给豆包即可'); }
+    try { document.execCommand('copy'); toast('✓ 已复制'); }
     catch (e) { toast('请长按内容手动复制'); }
   };
 
@@ -656,7 +813,8 @@
       saveLocal();
       renderAll();
       updateSyncBar();
-      toast('✓ 成功导入合并 ' + imported + ' 条，记得同步到云端');
+      toast('✓ 成功导入合并 ' + imported + ' 条');
+      if (getToken()) pushCloud(0);
     } else {
       toast('没有新记录可导入（都已存在）');
     }
@@ -685,11 +843,13 @@
   // ===== 初始化 =====
   loadLocal();
   renderAll();
-  fetchCloud();                       // 立即拉取云端
-  setInterval(fetchCloud, 20000);     // 每 20 秒自动刷新云端最新
-  setInterval(function () {           // 每 30 秒重算待同步状态
+  fetchCloud();
+  setInterval(fetchCloud, 20000);   // 每20秒拉取云端最新
+  setInterval(function () {
     updateSyncBar();
-  }, 30000);
+    // 有待同步且开了自动同步 → 自动重试
+    if (getToken() && pendingRecords().length > 0) pushCloud(0);
+  }, 60000);                        // 每60秒检查并自动补同步
 })();
 </script>
 </body>
