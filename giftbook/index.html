@@ -368,8 +368,35 @@
     try { localStorage.setItem(TOKEN_KEY, t); } catch (e) {}
   }
 
-  // ===== 云端读取（GitHub Pages 静态文件，每20秒轮询）=====
-  function fetchCloud() {
+  // ===== 云端读取 =====
+  // 有 token：GitHub API 实时轮询（认证 5000次/小时）
+  // 无 token：首次 GitHub API 实时读一次，之后 Pages 静态文件 20秒轮询（部署后约1-2分钟生效）
+
+  function fetchCloudApi() {
+    if (fetching) return Promise.resolve(false);
+    fetching = true;
+    var opts = { headers: { 'Accept': 'application/vnd.github+json' } };
+    if (getToken()) opts.headers['Authorization'] = 'token ' + getToken();
+    return fetch('https://api.github.com/repos/' + REPO + '/contents/' + DATA_PATH, opts)
+      .then(function (res) {
+        fetching = false;
+        if (res.status === 200) {
+          return res.json().then(function (d) {
+            var cloud = [];
+            if (d && d.content) {
+              try { cloud = JSON.parse(decodeURIComponent(escape(atob(d.content)))); } catch (e) { cloud = []; }
+            }
+            if (Array.isArray(cloud)) mergeCloud(cloud);
+            return true;
+          });
+        }
+        if (res.status === 429) { setSyncBar('warn', '读取频率受限，切换为页面刷新模式'); return false; }
+        return false;
+      })
+      .catch(function () { fetching = false; return false; });
+  }
+
+  function fetchCloudPages() {
     if (fetching) return;
     fetching = true;
     var xhr = new XMLHttpRequest();
@@ -388,6 +415,11 @@
     xhr.onerror = function () { fetching = false; setSyncBar('err', '云端连接失败，显示本机数据（会自动重试）'); };
     xhr.ontimeout = function () { fetching = false; setSyncBar('err', '云端连接超时，显示本机数据（会自动重试）'); };
     xhr.send();
+  }
+
+  function fetchCloud() {
+    // 有 token 走实时 API；无 token 首次 API 后切 Pages
+    fetchCloudApi();
   }
 
   function mergeCloud(cloud) {
@@ -843,8 +875,14 @@
   // ===== 初始化 =====
   loadLocal();
   renderAll();
-  fetchCloud();
-  setInterval(fetchCloud, 20000);   // 每20秒拉取云端最新
+  fetchCloud();                                  // 首次拉取（有token走实时API）
+  if (getToken()) {
+    setInterval(fetchCloudApi, 20000);           // 有token：API实时轮询
+  } else {
+    setTimeout(function () {
+      setInterval(fetchCloudPages, 20000);       // 无token：Pages静态文件轮询
+    }, 3000);
+  }
   setInterval(function () {
     updateSyncBar();
     // 有待同步且开了自动同步 → 自动重试
