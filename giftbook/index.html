@@ -49,7 +49,7 @@
   .header .names { margin: 8px 0 4px; font-size: 18px; color: var(--text); letter-spacing: 2px; }
   .header .sub { font-size: 13px; color: var(--text-light); letter-spacing: 1px; }
 
-  .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 14px 0; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0; }
   .stat {
     background: var(--card); border-radius: 14px; padding: 14px 8px;
     text-align: center; box-shadow: 0 2px 8px rgba(74,63,53,0.06);
@@ -201,8 +201,12 @@
       <div class="lbl">随礼人数</div>
     </div>
     <div class="stat">
-      <div class="num" id="statSplit">0 / 0</div>
-      <div class="lbl">男方 / 女方</div>
+      <div class="num" id="statM">0</div>
+      <div class="lbl">男方礼金(元)</div>
+    </div>
+    <div class="stat">
+      <div class="num" id="statW">0</div>
+      <div class="lbl">女方礼金(元)</div>
     </div>
   </div>
 
@@ -235,6 +239,15 @@
       </div>
     </div>
     <button class="btn btn-primary" id="btnAdd" onclick="addRecord()">✓ 记 录</button>
+  </div>
+
+  <div class="card">
+    <h2>拍 照 识 别</h2>
+    <p style="font-size:12px;color:#c9beb2;line-height:1.6;margin-bottom:10px;">上传转账账单截图，自动提取「名字 + 金额」，核对后一键添加。不会覆盖已有记录。</p>
+    <button class="btn btn-primary" style="background:linear-gradient(160deg,#a37d4a,#8a6a3f);" onclick="pickImage()">📷 上传截图识别</button>
+    <input type="file" id="fileInput" accept="image/*" style="display:none;">
+    <div id="ocrStatus" style="display:none;font-size:12px;color:#b8915c;margin-top:10px;line-height:1.6;"></div>
+    <div id="ocrResult" style="display:none;margin-top:12px;"></div>
   </div>
 
   <div class="filter-row">
@@ -571,15 +584,16 @@
   }
 
   function renderStats() {
-    var total = 0, cnt = 0, m = 0, w = 0;
+    var total = 0, cnt = 0, mAmt = 0, wAmt = 0;
     records.forEach(function (r) {
       total += Number(r.amount) || 0;
       cnt++;
-      if (r.side === 'm') m++; else w++;
+      if (r.side === 'm') mAmt += Number(r.amount) || 0; else wAmt += Number(r.amount) || 0;
     });
     document.getElementById('statTotal').textContent = fmtMoney(total);
     document.getElementById('statCount').textContent = cnt;
-    document.getElementById('statSplit').textContent = m + ' / ' + w;
+    document.getElementById('statM').textContent = fmtMoney(mAmt);
+    document.getElementById('statW').textContent = fmtMoney(wAmt);
   }
 
   function renderList() {
@@ -871,6 +885,129 @@
     if (toastTimer) clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2600);
   }
+
+  // ===== 拍照识别（Tesseract.js 懒加载）=====
+  function setOcr(msg) {
+    var el = document.getElementById('ocrStatus');
+    el.style.display = 'block';
+    el.textContent = msg;
+  }
+
+  window.pickImage = function () {
+    document.getElementById('fileInput').click();
+  };
+
+  function loadTesseract() {
+    return new Promise(function (resolve, reject) {
+      if (window.Tesseract) return resolve(window.Tesseract);
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+      s.onload = function () { resolve(window.Tesseract); };
+      s.onerror = function () { reject(new Error('OCR组件加载失败，请检查网络后重试，也可手动填写')); };
+      document.head.appendChild(s);
+    });
+  }
+
+  document.getElementById('fileInput').addEventListener('change', function (e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) return;
+    setOcr('正在加载中文识别引擎（首次约需10~30秒，请耐心等待）…');
+    loadTesseract().then(function (T) {
+      setOcr('识别引擎就绪，正在识别图片…');
+      return T.createWorker('chi_sim', 1, {
+        logger: function (m) {
+          if (m && m.status === 'recognizing text' && m.progress) {
+            setOcr('正在识别… ' + (m.progress * 100).toFixed(0) + '%');
+          }
+        },
+        langPath: 'https://cdn.jsdelivr.net/npm/@tesseract.js-data/chi_sim/4.0.0_best_int/',
+        workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js',
+        corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/tesseract-core-simd.wasm.js'
+      }).then(function (worker) {
+        return worker.recognize(file).then(function (ret) {
+          return worker.terminate().then(function () { return ret.data.text; });
+        });
+      });
+    }).then(function (text) {
+      var cands = parseCandidates(text);
+      if (!cands.length) {
+        setOcr('没有识别到「来自XX +金额」的记录，请换一张更清晰的截图，或手动填写。');
+        return;
+      }
+      setOcr('识别完成，请核对后一键添加：');
+      renderCands(cands);
+    }).catch(function (err) {
+      setOcr('⚠ ' + (err && err.message ? err.message : '识别失败，可手动填写'));
+    });
+  });
+
+  function parseCandidates(text) {
+    var lines = String(text || '').split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+    var cands = [];
+    for (var i = 0; i < lines.length; i++) {
+      var m = lines[i].match(/来自([^\s]+)/);
+      if (!m) continue;
+      var rawName = m[1];
+      // 清洗名字：去掉常见干扰（日期、多余符号）
+      var name = rawName.replace(/[^\u4e00-\u9fa5A-Za-z0-9·（）()]/g, '').trim();
+      if (!name || name.length > 12) continue;
+      if (name.indexOf('转给') >= 0 || name.indexOf('收款') >= 0) continue;
+      var amount = null;
+      for (var j = i; j <= Math.min(i + 2, lines.length - 1); j++) {
+        if (lines[j].indexOf('来自') >= 0) continue;
+        var am = lines[j].match(/[+]?\s*(\d{1,6}(?:\.\d{1,2})?)/);
+        if (am) { amount = am[1]; break; }
+      }
+      if (name && amount && Number(amount) > 0) {
+        cands.push({ name: name, amount: Number(amount) });
+      }
+    }
+    // 去重（同名字同金额只保留一条）
+    var seen = {}, out = [];
+    cands.forEach(function (c) {
+      var k = c.name + '_' + c.amount;
+      if (!seen[k]) { seen[k] = 1; out.push(c); }
+    });
+    return out;
+  }
+
+  function renderCands(cands) {
+    var html = '<div style="font-size:13px;color:#8a7a63;margin-bottom:8px;">识别到 <b>' + cands.length + '</b> 条，可修改名字/金额后添加：</div>';
+    cands.forEach(function (c) {
+      html += '<div class="ocr-item" style="display:flex;gap:6px;align-items:center;margin-bottom:8px;background:#faf6ef;border-radius:10px;padding:8px;">' +
+        '<input type="checkbox" class="ocr-chk" checked style="width:18px;height:18px;flex:none;">' +
+        '<input class="ocr-name" value="' + esc(c.name) + '" style="flex:1;min-width:0;padding:7px 8px;border:1px solid #e5dcc8;border-radius:8px;font-size:14px;">' +
+        '<input class="ocr-amt" type="number" value="' + c.amount + '" style="width:86px;padding:7px 8px;border:1px solid #e5dcc8;border-radius:8px;font-size:14px;">' +
+        '<select class="ocr-side" style="padding:7px 4px;border:1px solid #e5dcc8;border-radius:8px;font-size:13px;"><option value="m">男方</option><option value="w">女方</option></select>' +
+        '</div>';
+    });
+    html += '<button class="btn btn-primary" onclick="addOcrSelected()" style="margin-top:2px;width:100%;">✓ 一键添加所选 ' + cands.length + ' 条</button>';
+    document.getElementById('ocrResult').innerHTML = html;
+    document.getElementById('ocrResult').style.display = 'block';
+  }
+
+  window.addOcrSelected = function () {
+    var items = document.querySelectorAll('.ocr-item');
+    var added = 0;
+    items.forEach(function (it) {
+      if (!it.querySelector('.ocr-chk').checked) return;
+      var name = it.querySelector('.ocr-name').value.trim();
+      var amount = Number(it.querySelector('.ocr-amt').value);
+      var side = it.querySelector('.ocr-side').value;
+      if (!name || !amount || amount <= 0) return;
+      records.push({ id: uid(), name: name, amount: amount, side: side, note: '识别', ts: Date.now() });
+      added++;
+    });
+    if (!added) { toast('没有可添加的记录'); return; }
+    saveLocal();
+    renderAll();
+    updateSyncBar();
+    if (getToken()) pushCloud(0);
+    toast('✓ 已添加 ' + added + ' 条，自动同步中');
+    document.getElementById('ocrResult').style.display = 'none';
+    document.getElementById('ocrStatus').style.display = 'none';
+    document.getElementById('fileInput').value = '';
+  };
 
   // ===== 初始化 =====
   loadLocal();
