@@ -908,64 +908,25 @@
     });
   }
 
-  // 图片预处理：放大2倍 + 自动判断深/浅色模式 + 灰度二值化，大幅提升OCR识别率
-  function preprocessImage(img) {
-    var scale = 2;
-    var canvas = document.createElement('canvas');
-    canvas.width = img.naturalWidth * scale;
-    canvas.height = img.naturalHeight * scale;
-    var ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    try {
-      var data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      var px = data.data;
-      var sum = 0, n = 0;
-      for (var i = 0; i < px.length; i += 16) { sum += px[i]; n++; }
-      var dark = (sum / n) < 128;
-      for (var j = 0; j < px.length; j += 4) {
-        var gray = 0.299 * px[j] + 0.587 * px[j + 1] + 0.114 * px[j + 2];
-        var bw;
-        if (dark) { var v = 255 - gray; bw = v > 128 ? 255 : 0; }  // 深色底→白底黑字
-        else { bw = gray > 128 ? 255 : 0; }                          // 浅色底→直接二值化
-        px[j] = px[j + 1] = px[j + 2] = bw;
-      }
-      ctx.putImageData(data, 0, 0);
-    } catch (e) {}
-    return canvas.toDataURL('image/png');
-  }
-
   document.getElementById('fileInput').addEventListener('change', function (e) {
     var file = e.target.files && e.target.files[0];
     if (!file) return;
     setOcr('正在加载中文识别引擎（首次约需10~30秒，请耐心等待）…');
     loadTesseract().then(function (T) {
-      // 读取图片 → 预处理增强 → 识别
-      return new Promise(function (resolve, reject) {
-        var url = URL.createObjectURL(file);
-        var img = new Image();
-        img.onload = function () {
-          try { resolve(preprocessImage(img)); } catch (err) { resolve(url); }
-          URL.revokeObjectURL(url);
-        };
-        img.onerror = function () { reject(new Error('图片读取失败')); };
-        img.src = url;
-      }).then(function (dataUrl) {
-        setOcr('识别引擎就绪，正在识别图片…');
-        return T.createWorker('chi_sim', 1, {
-          logger: function (m) {
-            if (m && m.status === 'recognizing text' && m.progress) {
-              setOcr('正在识别… ' + (m.progress * 100).toFixed(0) + '%');
-            }
-          },
-          langPath: 'https://cdn.jsdelivr.net/npm/@tesseract.js-data/chi_sim/4.0.0_best_int/',
-          workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js',
-          corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/tesseract-core-simd.wasm.js'
-        }).then(function (worker) {
-          return worker.recognize(dataUrl).then(function (ret) {
-            return worker.terminate().then(function () { return ret.data.text; });
-          });
+      // 直接用原图识别（实测预处理反而会破坏识别，原图效果最好）
+      setOcr('识别引擎就绪，正在识别图片…');
+      return T.createWorker('chi_sim', 1, {
+        logger: function (m) {
+          if (m && m.status === 'recognizing text' && m.progress) {
+            setOcr('正在识别… ' + (m.progress * 100).toFixed(0) + '%');
+          }
+        },
+        langPath: 'https://cdn.jsdelivr.net/npm/@tesseract.js-data/chi_sim/4.0.0_best_int/',
+        workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js',
+        corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/tesseract-core-simd.wasm.js'
+      }).then(function (worker) {
+        return worker.recognize(file).then(function (ret) {
+          return worker.terminate().then(function () { return ret.data.text; });
         });
       });
     }).then(function (text) {
@@ -985,24 +946,31 @@
     var lines = String(text || '').split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
     var cands = [];
     for (var i = 0; i < lines.length; i++) {
-      var m = lines[i].match(/来自([^\s]+)/);
-      if (!m) continue;
-      var rawName = m[1];
-      // 清洗名字：去掉干扰（…省略号、日期、多余符号）
-      var name = rawName.replace(/[…·—]+/g, '').replace(/[^\u4e00-\u9fa5A-Za-z0-9（）()]/g, '').trim();
+      // 兼容OCR把"来自"识别成"来 自"（中间有空格），再压缩整行空格
+      var compact = lines[i].replace(/来\s*自/g, '来自').replace(/\s+/g, '');
+      // 微信账单：名字和金额同行，如"转账-来自邹叶+300.00"
+      var m = compact.match(/来自(.+?)([+]?\d{1,7}(?:\.\d{1,2})?)$/);
+      var name = null, amount = null;
+      if (m) {
+        name = m[1].replace(/[^\u4e00-\u9fa5A-Za-z0-9（）()]/g, '');
+        amount = m[2].replace('+', '');
+      } else {
+        // 支付宝账单：名字行无金额，金额在下一行
+        var m2 = compact.match(/来自(.+)$/);
+        if (!m2) continue;
+        name = m2[1].replace(/[^\u4e00-\u9fa5A-Za-z0-9（）()]/g, '');
+        for (var j = i + 1; j <= Math.min(i + 2, lines.length - 1); j++) {
+          var l = lines[j];
+          if (l.indexOf('来自') >= 0) continue;
+          if (/[年月日]/.test(l) || /:\d{2}/.test(l)) continue;   // 跳过日期/时间行
+          if (/^-\s*/.test(l)) continue;                            // 跳过支出行
+          var am = l.match(/^\+?\s*(\d{1,7}(?:\.\d{1,2})?)/);
+          if (am && Number(am[1]) > 0) { amount = am[1]; break; }
+        }
+      }
       if (!name || name.length > 12) continue;
       if (name.indexOf('转给') >= 0 || name.indexOf('收款') >= 0) continue;
-      var amount = null;
-      for (var j = i; j <= Math.min(i + 2, lines.length - 1); j++) {
-        if (lines[j].indexOf('来自') >= 0) continue;
-        // 跳过日期/时间行（如 9月30日 19:16）
-        if (/[年月日]/.test(lines[j]) || /:\d{2}/.test(lines[j])) continue;
-        // 跳过支出行（- 开头）
-        if (/^-\s*/.test(lines[j])) continue;
-        var am = lines[j].match(/^\+?\s*(\d{1,7}(?:\.\d{1,2})?)/);
-        if (am && Number(am[1]) > 0) { amount = am[1]; break; }
-      }
-      if (name && amount && Number(amount) > 0) {
+      if (amount && Number(amount) > 0) {
         cands.push({ name: name, amount: Number(amount) });
       }
     }
